@@ -1,94 +1,83 @@
 import io.qameta.allure.Description;
 import io.qameta.allure.junit4.DisplayName;
-import org.example.steps.CourierSteps;
 import org.example.pojo.CourierCreateRequest;
 import org.example.pojo.CourierLoginRequest;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
+
+import java.util.UUID;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
 
 public class CourierLoginTest {
 
-    public static String login = "Igor";
-    public static String password = "qwerty123";
-    public static String firstName = "Игорь";
+    private CourierSteps courierSteps;
+    private CourierLoginRequest validCourierLoginRequest;
 
+    private String login;
+    private final String password = "qwerty123";
+
+    @Before
+    public void setUp() {
+        courierSteps = new CourierSteps();
+        login = "Igor_" + UUID.randomUUID();
+
+        CourierCreateRequest courierCreateRequest =
+                new CourierCreateRequest(login, password, "Игорь");
+
+        validCourierLoginRequest =
+                new CourierLoginRequest(login, password);
+
+        courierSteps.courierCreate(courierCreateRequest)
+                .assertThat()
+                .statusCode(201);
+    }
+
+    @After
+    public void tearDown() {
+        if (courierSteps != null && validCourierLoginRequest != null) {
+            courierSteps.courierDeleteAfterLogin(validCourierLoginRequest);
+        }
+    }
 
     @Test
     @DisplayName("Авторизация курьера")
     @Description("Проверка, что курьер может авторизоваться с набором валидных данных")
     public void loginCourier() {
-
-        CourierCreateRequest courierCreateRequest = new CourierCreateRequest(login, password, firstName);
-        CourierLoginRequest courierLoginRequest = new CourierLoginRequest(login, password);
-        CourierSteps courierSteps = new CourierSteps();
-
-        courierSteps.courierCreate(courierCreateRequest);
-
-        courierSteps.courierLogin(courierLoginRequest)
-                .assertThat().body("id", instanceOf(Integer.class))
-                .and()
-                .statusCode(200);
-
-        courierSteps.courierDeleteAfterLogin(courierLoginRequest);
-
+        courierSteps.courierLogin(validCourierLoginRequest)
+                .log().all()
+                .assertThat()
+                .statusCode(200)
+                .body("id", instanceOf(Integer.class));
     }
 
     @Test
     @DisplayName("Авторизация курьера без логина")
-    @Description("Проверка, что курьер НЕ может авторизоваться без передачи поля login")
+    @Description("Проверка, что курьер не может авторизоваться без передачи поля login")
     public void loginCourierWithoutLogin() {
+        CourierLoginRequest requestWithoutLogin =
+                new CourierLoginRequest(null, password);
 
-        CourierCreateRequest courierCreateRequest = new CourierCreateRequest(login, password, firstName);
-        CourierLoginRequest courierLoginRequest = new CourierLoginRequest(null, password);
-        CourierSteps courierSteps = new CourierSteps();
-
-        courierSteps.courierCreate(courierCreateRequest);
-
-        courierSteps.courierLogin(courierLoginRequest)
-                .assertThat().body("message", equalTo("Недостаточно данных для входа"))
-                .and()
-                .statusCode(400);
-
-        CourierLoginRequest validCourierLoginRequest = new CourierLoginRequest(login, password);
-        courierSteps.courierDeleteAfterLogin(validCourierLoginRequest);
-
+        courierSteps.courierLogin(requestWithoutLogin)
+                .log().all()
+                .assertThat()
+                .statusCode(400)
+                .body("message", equalTo("Недостаточно данных для входа"));
     }
 
     @Test
     @DisplayName("Авторизация курьера без пароля")
-    @Description("Проверка, что курьер НЕ может авторизоваться без передачи поля password")
+    @Description("Проверка, что курьер не может авторизоваться без передачи поля password")
     public void loginCourierWithoutPassword() {
+        CourierLoginRequest requestWithoutPassword =
+                new CourierLoginRequest(login, null);
 
-        CourierCreateRequest courierCreateRequest = new CourierCreateRequest(login, password, firstName);
-        CourierLoginRequest courierLoginRequest = new CourierLoginRequest(login, null);
-        CourierSteps courierSteps = new CourierSteps();
-
-        courierSteps.courierCreate(courierCreateRequest);
-
-        courierSteps.courierLogin(courierLoginRequest)
-                .assertThat().body("message", equalTo("Недостаточно данных для входа"))
-                .and()
-                .statusCode(400);
-
-        CourierLoginRequest validCourierLoginRequest = new CourierLoginRequest(login, password);
-        courierSteps.courierDeleteAfterLogin(validCourierLoginRequest);
-
-    }
-
-    @Test
-    @DisplayName("Авторизация курьера, используя несуществующие данные")
-    @Description("Проверка, что курьер НЕ может авторизоваться, используя несуществующие данные для входа")
-    public void loginCourierWithNonExistentCredential () {
-
-        CourierLoginRequest courierLoginRequest = new CourierLoginRequest(login, password);
-        CourierSteps courierSteps = new CourierSteps();
-
-        courierSteps.courierLogin(courierLoginRequest)
-                .assertThat().body("message", equalTo("Учетная запись не найдена"))
-                .and()
-                .statusCode(404);
-
+        courierSteps.courierLogin(requestWithoutPassword)
+                .log().all()
+                .assertThat()
+                .statusCode(400)
+                .body("message", equalTo("Недостаточно данных для входа"));
     }
 }

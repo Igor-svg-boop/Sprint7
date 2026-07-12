@@ -1,10 +1,12 @@
 import io.qameta.allure.Description;
 import io.qameta.allure.junit4.DisplayName;
-import org.example.steps.CourierSteps;
 import org.example.pojo.CourierCreateRequest;
 import org.example.pojo.CourierLoginRequest;
 import org.junit.Test;
 
+import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
+import static org.apache.http.HttpStatus.SC_CONFLICT;
+import static org.apache.http.HttpStatus.SC_CREATED;
 import static org.hamcrest.CoreMatchers.equalTo;
 
 public class CourierCreateTest {
@@ -13,20 +15,21 @@ public class CourierCreateTest {
     public static String password = "qwerty123";
     public static String firstName = "Игорь";
 
-
     @Test
     @DisplayName("Создание нового курьера")
     @Description("Проверяем, что курьера можно создать с валидными данными")
     public void createNewCourier() {
 
-        CourierCreateRequest courierCreateRequest = new CourierCreateRequest(login, password, firstName);
-        CourierLoginRequest courierLoginRequest = new CourierLoginRequest(login, password);
+        CourierCreateRequest courierCreateRequest =
+                new CourierCreateRequest(login, password, firstName);
+        CourierLoginRequest courierLoginRequest =
+                new CourierLoginRequest(login, password);
         CourierSteps courierSteps = new CourierSteps();
 
         courierSteps.courierCreate(courierCreateRequest)
-                .assertThat().body("ok", equalTo(true))
-                .and()
-                .statusCode(201);
+                .assertThat()
+                .statusCode(SC_CREATED)
+                .body("ok", equalTo(true));
 
         courierSteps.courierDeleteAfterLogin(courierLoginRequest);
     }
@@ -36,19 +39,24 @@ public class CourierCreateTest {
     @Description("Попытка создать двух курьеров с одинаковым набором данных. Создание второго курьера должно провалиться")
     public void createTwoIdenticalCouriers() {
 
-        CourierCreateRequest courierCreateRequest = new CourierCreateRequest(login, password, firstName);
-        CourierLoginRequest courierLoginRequest = new CourierLoginRequest(login, password);
+        CourierCreateRequest courierCreateRequest =
+                new CourierCreateRequest(login, password, firstName);
+        CourierLoginRequest courierLoginRequest =
+                new CourierLoginRequest(login, password);
         CourierSteps courierSteps = new CourierSteps();
 
         courierSteps.courierCreate(courierCreateRequest)
-                .assertThat().body("ok", equalTo(true))
-                .and()
-                .statusCode(201);
+                .assertThat()
+                .statusCode(SC_CREATED)
+                .body("ok", equalTo(true));
 
         courierSteps.courierCreate(courierCreateRequest)
-                .assertThat().body("message", equalTo("Этот логин уже используется. Попробуйте другой."))
-                .and()
-                .statusCode(409);
+                .assertThat()
+                .statusCode(SC_CONFLICT)
+                .body(
+                        "message",
+                        equalTo("Этот логин уже используется. Попробуйте другой.")
+                );
 
         courierSteps.courierDeleteAfterLogin(courierLoginRequest);
     }
@@ -57,25 +65,35 @@ public class CourierCreateTest {
     @DisplayName("Создание курьера без логина")
     @Description("Попытка создать курьера без передачи поля login. Создание курьера должно провалиться")
     public void createCourierWithoutLogin() {
-        CourierCreateRequest courierCreateRequest = new CourierCreateRequest(login, null, firstName);
+
+        CourierCreateRequest courierCreateRequest =
+                new CourierCreateRequest(null, password, firstName);
         CourierSteps courierSteps = new CourierSteps();
 
         courierSteps.courierCreate(courierCreateRequest)
-                .assertThat().body("message", equalTo("Недостаточно данных для создания учетной записи"))
-                .and()
-                .statusCode(400);
+                .assertThat()
+                .statusCode(SC_BAD_REQUEST)
+                .body(
+                        "message",
+                        equalTo("Недостаточно данных для создания учетной записи")
+                );
     }
 
     @Test
     @DisplayName("Создание курьера без пароля")
     @Description("Попытка создать курьера без передачи поля password. Создание курьера должно провалиться")
     public void createCourierWithoutPassword() {
-        CourierCreateRequest courierCreateRequest = new CourierCreateRequest(null, password, firstName);
+
+        CourierCreateRequest courierCreateRequest =
+                new CourierCreateRequest(login, null, firstName);
         CourierSteps courierSteps = new CourierSteps();
 
         courierSteps.courierCreate(courierCreateRequest)
-                .assertThat().body("message", equalTo("Недостаточно данных для создания учетной записи"))
-                .and()
-                .statusCode(400);
+                .assertThat()
+                .statusCode(SC_BAD_REQUEST)
+                .body(
+                        "message",
+                        equalTo("Недостаточно данных для создания учетной записи")
+                );
     }
 }

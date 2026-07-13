@@ -37,6 +37,20 @@
             <version>2.10.1</version>
         </dependency>
 
+        <!-- REST Assured доступен для src/main/java -->
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>rest-assured</artifactId>
+            <version>5.3.0</version>
+        </dependency>
+
+        <!-- Аннотация Allure @Step доступна для src/main/java -->
+        <dependency>
+            <groupId>io.qameta.allure</groupId>
+            <artifactId>allure-java-commons</artifactId>
+            <version>${allure.version}</version>
+        </dependency>
+
         <!-- JUnit 4 -->
         <dependency>
             <groupId>junit</groupId>
@@ -45,15 +59,7 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Rest Assured -->
-        <dependency>
-            <groupId>io.rest-assured</groupId>
-            <artifactId>rest-assured</artifactId>
-            <version>5.3.0</version>
-            <scope>test</scope>
-        </dependency>
-
-        <!-- Allure и JUnit 4 -->
+        <!-- Интеграция Allure с JUnit 4 -->
         <dependency>
             <groupId>io.qameta.allure</groupId>
             <artifactId>allure-junit4</artifactId>
@@ -61,7 +67,7 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Allure и Rest Assured -->
+        <!-- Интеграция Allure с REST Assured -->
         <dependency>
             <groupId>io.qameta.allure</groupId>
             <artifactId>allure-rest-assured</artifactId>
@@ -73,6 +79,19 @@
 
     <build>
         <plugins>
+
+            <!-- Компиляция проекта -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
+
+                <configuration>
+                    <source>11</source>
+                    <target>11</target>
+                    <encoding>UTF-8</encoding>
+                </configuration>
+            </plugin>
 
             <!-- Запуск тестов -->
             <plugin>
@@ -94,12 +113,12 @@
                         </property>
                     </properties>
 
-                    <systemProperties>
-                        <property>
-                            <name>allure.results.directory</name>
-                            <value>${project.build.directory}/allure-results</value>
-                        </property>
-                    </systemProperties>
+                    <!-- Результаты Allure сохраняются рядом с pom.xml -->
+                    <systemPropertyVariables>
+                        <allure.results.directory>
+                            ${project.basedir}/allure-results
+                        </allure.results.directory>
+                    </systemPropertyVariables>
                 </configuration>
 
                 <dependencies>

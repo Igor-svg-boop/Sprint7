@@ -2,6 +2,7 @@ import io.qameta.allure.Description;
 import io.qameta.allure.junit4.DisplayName;
 import org.example.pojo.CourierCreateRequest;
 import org.example.pojo.CourierLoginRequest;
+import org.example.steps.CourierSteps;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,6 +32,7 @@ public class CourierLoginTest {
                 new CourierLoginRequest(login, password);
 
         courierSteps.courierCreate(courierCreateRequest)
+                .log().all()
                 .assertThat()
                 .statusCode(201);
     }
@@ -44,7 +46,7 @@ public class CourierLoginTest {
 
     @Test
     @DisplayName("Авторизация курьера")
-    @Description("Проверка, что курьер может авторизоваться с набором валидных данных")
+    @Description("Проверка, что курьер может авторизоваться с валидными данными")
     public void loginCourier() {
         courierSteps.courierLogin(validCourierLoginRequest)
                 .log().all()
@@ -55,7 +57,7 @@ public class CourierLoginTest {
 
     @Test
     @DisplayName("Авторизация курьера без логина")
-    @Description("Проверка, что курьер не может авторизоваться без передачи поля login")
+    @Description("Проверка, что курьер не может авторизоваться без поля login")
     public void loginCourierWithoutLogin() {
         CourierLoginRequest requestWithoutLogin =
                 new CourierLoginRequest(null, password);
@@ -64,12 +66,15 @@ public class CourierLoginTest {
                 .log().all()
                 .assertThat()
                 .statusCode(400)
-                .body("message", equalTo("Недостаточно данных для входа"));
+                .body(
+                        "message",
+                        equalTo("Недостаточно данных для входа")
+                );
     }
 
     @Test
     @DisplayName("Авторизация курьера без пароля")
-    @Description("Проверка, что курьер не может авторизоваться без передачи поля password")
+    @Description("Проверка, что курьер не может авторизоваться без поля password")
     public void loginCourierWithoutPassword() {
         CourierLoginRequest requestWithoutPassword =
                 new CourierLoginRequest(login, null);
@@ -78,6 +83,43 @@ public class CourierLoginTest {
                 .log().all()
                 .assertThat()
                 .statusCode(400)
-                .body("message", equalTo("Недостаточно данных для входа"));
+                .body(
+                        "message",
+                        equalTo("Недостаточно данных для входа")
+                );
+    }
+
+    @Test
+    @DisplayName("Авторизация курьера с неверным логином")
+    @Description("Проверка авторизации с несуществующим логином")
+    public void loginCourierWithWrongLogin() {
+        CourierLoginRequest requestWithWrongLogin =
+                new CourierLoginRequest(login + "_wrong", password);
+
+        courierSteps.courierLogin(requestWithWrongLogin)
+                .log().all()
+                .assertThat()
+                .statusCode(404)
+                .body(
+                        "message",
+                        equalTo("Учетная запись не найдена")
+                );
+    }
+
+    @Test
+    @DisplayName("Авторизация курьера с неверным паролем")
+    @Description("Проверка авторизации с неверным паролем")
+    public void loginCourierWithWrongPassword() {
+        CourierLoginRequest requestWithWrongPassword =
+                new CourierLoginRequest(login, password + "_wrong");
+
+        courierSteps.courierLogin(requestWithWrongPassword)
+                .log().all()
+                .assertThat()
+                .statusCode(404)
+                .body(
+                        "message",
+                        equalTo("Учетная запись не найдена")
+                );
     }
 }
